@@ -140,7 +140,6 @@ spec:
           image: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/frontend:latest
           ports: [{ containerPort: 3000 }]
           env:
-            - { name: NEXT_PUBLIC_API_URL, value: "/api" }
 ---
 apiVersion: v1
 kind: Service

@@ -9,7 +9,7 @@ RUN npm install
 COPY . .
 # NEXT_PUBLIC_* vars must be present at build time — Next.js inlines them
 # into the client JS bundle here, a runtime container env var is too late.
-ARG NEXT_PUBLIC_API_URL=/api
+ARG NEXT_PUBLIC_API_URL=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Build Next.js standalone output
