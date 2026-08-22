@@ -1,17 +1,22 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - 00-postgres-redis.yaml
-  - 10-services.yaml
-  - 20-ingress.yaml
+- 00-postgres-redis.yaml
+- 10-services.yaml
+- 20-ingress.yaml
 images:
-  - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/api-gateway
-    newTag: latest
-  - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/auth-service
-    newTag: latest
-  - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/calculator-service
-    newTag: latest
-  - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/user-service
-    newTag: latest
-  - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/frontend
-    newTag: latest
+- name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/api-gateway
+  newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/api-gateway
+  newTag: 42348b8
+- name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/auth-service
+  newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/auth-service
+  newTag: 42348b8
+- name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/calculator-service
+  newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/calculator-service
+  newTag: 42348b8
+- name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/frontend
+  newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/frontend
+  newTag: 42348b8
+- name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/user-service
+  newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/user-service
+  newTag: 42348b8
