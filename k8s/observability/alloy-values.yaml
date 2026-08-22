@@ -1,0 +1,51 @@
+alloy:
+  configMap:
+    content: |
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      // Build proper labels once, shared by both logs and metrics
+      discovery.relabel "pods_relabeled" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_ip", "__meta_kubernetes_pod_container_port_number"]
+          separator     = ":"
+          target_label  = "__address__"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pods_relabeled.output
+        forward_to = [loki.write.central.receiver]
+      }
+
+      loki.write "central" {
+        endpoint {
+          url = "http://10.148.0.4:3100/loki/api/v1/push"
+        }
+      }
+
+      prometheus.scrape "kubernetes_pods" {
+        targets    = discovery.relabel.pods_relabeled.output
+        forward_to = [prometheus.remote_write.central.receiver]
+      }
+
+      prometheus.remote_write "central" {
+        endpoint {
+          url = "http://10.148.0.4:9090/api/v1/write"
+        }
+      }

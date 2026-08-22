@@ -1,0 +1,133 @@
+{
+  "title": "Calculator App - Full Observability",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Logs — whole cluster",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Log volume by namespace (all cluster workloads)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 1 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        { "expr": "sum by (namespace) (count_over_time({namespace=~\".+\"}[1m]))", "refId": "A" }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "logs",
+      "title": "Live logs - entire cluster (all namespaces)",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 9 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        { "expr": "{namespace=~\".+\"}", "refId": "A" }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Logs — calculator app",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "type": "logs",
+      "title": "Live logs - calculator namespace",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        { "expr": "{namespace=\"calculator\"}", "refId": "A" }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Log volume by pod (calculator)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        { "expr": "sum by (pod) (count_over_time({namespace=\"calculator\"}[1m]))", "refId": "A" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Error / anomaly log lines (last 15m)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        { "expr": "sum(count_over_time({namespace=\"calculator\"} |~ \"(?i)error|exception|attack|fail\" [15m]))", "refId": "A" }
+      ],
+      "options": { "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "bargauge",
+      "title": "Errors by pod (last 15m) — which service is noisiest",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 38 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        { "expr": "sum by (pod) (count_over_time({namespace=\"calculator\"} |~ \"(?i)error|exception|attack|fail\" [15m]))", "refId": "A" }
+      ],
+      "options": { "orientation": "horizontal" }
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Pod / service health",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Scrape health — per target (Prometheus 'up')",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 47 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "up{namespace=\"calculator\"}", "format": "table", "instant": true, "refId": "A" }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      { "name": "DS_LOKI", "type": "datasource", "query": "loki", "current": {} },
+      { "name": "DS_PROMETHEUS", "type": "datasource", "query": "prometheus", "current": {} }
+    ]
+  }
+}

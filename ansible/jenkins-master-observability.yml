@@ -1,0 +1,88 @@
+---
+- name: Install Grafana + Loki + Prometheus on Jenkins master (ops hub)
+  hosts: jenkins_master
+  become: true
+  tasks:
+    - name: Add Grafana Labs apt key
+      get_url:
+        url: https://apt.grafana.com/gpg.key
+        dest: /tmp/grafana.key
+
+    - name: Dearmor Grafana key
+      shell: gpg --dearmor -o /usr/share/keyrings/grafana.gpg < /tmp/grafana.key
+      args: { creates: /usr/share/keyrings/grafana.gpg }
+
+    - name: Add Grafana apt repo (includes grafana, loki, promtail, alloy)
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+        filename: grafana
+        state: present
+
+    - name: Install Grafana, Loki, Prometheus
+      apt:
+        name: [grafana, loki, prometheus]
+        state: present
+        update_cache: yes
+
+    - name: Configure Prometheus to accept remote_write (metrics pushed from agents)
+      lineinfile:
+        path: /etc/default/prometheus
+        regexp: '^ARGS='
+        line: 'ARGS="--enable-feature=remote-write-receiver --storage.tsdb.retention.time=15d"'
+        create: yes
+
+    - name: Ensure Loki config accepts remote pushes on 0.0.0.0
+      lineinfile:
+        path: /etc/loki/config.yml
+        regexp: '^\s*http_listen_address:'
+        line: '  http_listen_address: 0.0.0.0'
+
+    - name: Enable and start all three services
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+        enabled: true
+      loop:
+        - grafana-server
+        - loki
+        - prometheus
+
+    - name: Wait for Grafana API to actually be ready (not just the port open)
+      uri:
+        url: http://localhost:3000/api/health
+        status_code: 200
+      register: grafana_health
+      until: grafana_health.status == 200
+      retries: 30
+      delay: 3
+
+    - name: Add Prometheus as a Grafana datasource
+      uri:
+        url: http://localhost:3000/api/datasources
+        url_username: admin
+        url_password: admin123
+        force_basic_auth: yes
+        method: POST
+        body_format: json
+        body:
+          name: Prometheus
+          type: prometheus
+          url: http://localhost:9090
+          access: proxy
+          isDefault: true
+        status_code: [200, 409]
+
+    - name: Add Loki as a Grafana datasource
+      uri:
+        url: http://localhost:3000/api/datasources
+        url_username: admin
+        url_password: admin123
+        force_basic_auth: yes
+        method: POST
+        body_format: json
+        body:
+          name: Loki
+          type: loki
+          url: http://localhost:3100
+          access: proxy
+        status_code: [200, 409]
