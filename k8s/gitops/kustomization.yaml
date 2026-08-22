@@ -7,16 +7,16 @@ resources:
 images:
 - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/api-gateway
   newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/api-gateway
-  newTag: 42348b8
+  newTag: 975526f
 - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/auth-service
   newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/auth-service
-  newTag: 42348b8
+  newTag: 975526f
 - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/calculator-service
   newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/calculator-service
-  newTag: 42348b8
+  newTag: 975526f
 - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/frontend
   newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/frontend
-  newTag: 42348b8
+  newTag: 975526f
 - name: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/user-service
   newName: asia-southeast1-docker.pkg.dev/miraz001/calculator-repo/user-service
-  newTag: 42348b8
+  newTag: 975526f
