@@ -1,0 +1,182 @@
+version: '3.8'
+
+services:
+
+  # ── Infrastructure ────────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: calc_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       calculator_db
+      POSTGRES_USER:     calculator_user
+      POSTGRES_PASSWORD: calculator_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - calc_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U calculator_user -d calculator_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: calc_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - calc_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    command: redis-server --appendonly yes
+
+  # ── Microservices ─────────────────────────────────────────────────────────────
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: calc_auth_service
+    restart: on-failure
+    environment:
+      PORT:           4001
+      NODE_ENV:       production
+      DB_HOST:        postgres
+      DB_PORT:        5432
+      DB_NAME:        calculator_db
+      DB_USER:        calculator_user
+      DB_PASSWORD:    calculator_pass
+      REDIS_HOST:     redis
+      REDIS_PORT:     6379
+      JWT_SECRET:     super_secret_jwt_key_change_in_prod
+      JWT_EXPIRES_IN: 7d
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - calc_network
+
+  calculator-service:
+    build:
+      context: ./calculator-service
+      dockerfile: Dockerfile
+    container_name: calc_calculator_service
+    restart: on-failure
+    environment:
+      PORT:        4002
+      NODE_ENV:    production
+      DB_HOST:     postgres
+      DB_PORT:     5432
+      DB_NAME:     calculator_db
+      DB_USER:     calculator_user
+      DB_PASSWORD: calculator_pass
+      REDIS_HOST:  redis
+      REDIS_PORT:  6379
+      JWT_SECRET:  super_secret_jwt_key_change_in_prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - calc_network
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: calc_user_service
+    restart: on-failure
+    environment:
+      PORT:        4003
+      NODE_ENV:    production
+      DB_HOST:     postgres
+      DB_PORT:     5432
+      DB_NAME:     calculator_db
+      DB_USER:     calculator_user
+      DB_PASSWORD: calculator_pass
+      REDIS_HOST:  redis
+      REDIS_PORT:  6379
+      JWT_SECRET:  super_secret_jwt_key_change_in_prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - calc_network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: calc_api_gateway
+    restart: on-failure
+    ports:
+      - "4000:4000"
+    environment:
+      PORT:             4000
+      NODE_ENV:         production
+      AUTH_SERVICE_URL: http://auth-service:4001
+      CALC_SERVICE_URL: http://calculator-service:4002
+      USER_SERVICE_URL: http://user-service:4003
+      REDIS_HOST:       redis
+      REDIS_PORT:       6379
+      JWT_SECRET:       super_secret_jwt_key_change_in_prod
+      FRONTEND_URL:     http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      calculator-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+    networks:
+      - calc_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: calc_frontend
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    depends_on:
+      - api-gateway
+    networks:
+      - calc_network
+
+# ── Volumes ────────────────────────────────────────────────────────────────────
+
+volumes:
+  postgres_data:
+  redis_data:
+
+# ── Networks ───────────────────────────────────────────────────────────────────
+
+networks:
+  calc_network:
+    driver: bridge
