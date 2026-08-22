@@ -1,6 +1,6 @@
 import { Operator, CalcApiResponse, HistoryResponse } from '@/types';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 const authFetch = (url: string, token: string, options: RequestInit = {}) =>
   fetch(`${API}${url}`, {
