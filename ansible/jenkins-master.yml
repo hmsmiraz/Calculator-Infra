@@ -1,0 +1,40 @@
+---
+- name: Install Jenkins master
+  hosts: jenkins_master
+  become: true
+  tasks:
+    - name: Install Java 21 (Jenkins now requires 21+)
+      apt: { name: openjdk-21-jre, state: present, update_cache: yes }
+
+    - name: Ensure Java 21 is the default '''java''' on PATH
+      alternatives:
+        name: java
+        path: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+
+    - name: Add Jenkins repo key
+      get_url:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+        dest: /usr/share/keyrings/jenkins-keyring.asc
+        force: true
+
+    - name: Add Jenkins repo
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        filename: jenkins
+        state: present
+
+    - name: Install Jenkins
+      apt: { name: jenkins, state: present, update_cache: yes }
+
+    - name: Ensure Jenkins running
+      service: { name: jenkins, state: started, enabled: true }
+
+    - name: Install kubectl (for ArgoCD/Ingress bootstrap and troubleshooting)
+      shell: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        install kubectl /usr/local/bin/kubectl
+      args: { creates: /usr/local/bin/kubectl }
+
+    - name: Install Google Cloud SDK
+      shell: curl -sSL https://sdk.cloud.google.com | bash -s -- --disable-prompts
+      args: { creates: /root/google-cloud-sdk }

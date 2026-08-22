@@ -1,0 +1,35 @@
+---
+- name: Configure Jenkins Podman-build agent (calculator-app)
+  hosts: jenkins_agent
+  become: true
+  tasks:
+    - name: Install Java + Podman + git + build deps
+      apt:
+        name: [openjdk-21-jre, podman, git, curl, unzip]
+        state: present
+        update_cache: yes
+
+    - name: Install Google Cloud SDK
+      shell: curl -sSL https://sdk.cloud.google.com | bash -s -- --disable-prompts
+      args: { creates: /root/google-cloud-sdk }
+
+    - name: Symlink gcloud
+      file: { src: /root/google-cloud-sdk/bin/gcloud, dest: /usr/local/bin/gcloud, state: link, force: yes }
+
+    - name: Install kustomize
+      shell: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+        install kustomize /usr/local/bin/kustomize
+      args: { creates: /usr/local/bin/kustomize }
+
+    - name: Create jenkins agent user
+      user: { name: jenkins, shell: /bin/bash, create_home: yes }
+
+    - name: Authorize Jenkins master's SSH key for the jenkins user
+      authorized_key:
+        user: jenkins
+        key: "{{ lookup('file', '../jenkins-agent-key.pub') }}"
+
+    - name: Allow jenkins user to run rootless podman
+      shell: loginctl enable-linger jenkins
+      changed_when: false

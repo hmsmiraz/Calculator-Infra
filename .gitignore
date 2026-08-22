@@ -1,0 +1,8 @@
+admin-key
+admin-key.pub
+jenkins-agent-key
+jenkins-agent-key.pub
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+*.retry
