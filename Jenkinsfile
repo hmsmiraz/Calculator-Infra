@@ -18,7 +18,7 @@ pipeline {
       steps {
         sh '''
           gcloud auth print-access-token | \
-            podman login -u oauth2accesstoken --password-stdin https://${REGION}-docker.pkg.dev
+            podman login -u oauth2accesstoken --password-stdin ${REGION}-docker.pkg.dev
         '''
       }
     }
