@@ -115,6 +115,7 @@ spec:
             - { name: CALC_SERVICE_URL, value: "http://calculator-service:4002" }
             - { name: USER_SERVICE_URL, value: "http://user-service:4003" }
             - { name: REDIS_HOST, value: redis }
+            - { name: REDIS_PORT, value: "6379" }
             - name: JWT_SECRET
               valueFrom: { secretKeyRef: { name: calculator-secrets, key: jwt-secret } }
 ---
